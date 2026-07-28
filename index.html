@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI漫剧选题分析驾驶舱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+--bg-primary:#0a0e1a;--bg-secondary:#111827;--bg-card:rgba(255,255,255,0.03);--bg-card-hover:rgba(255,255,255,0.06);
+--border-color:rgba(255,255,255,0.08);--border-hover:rgba(255,255,255,0.15);
+--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;
+--accent-cyan:#00d4ff;--accent-purple:#7c3aed;--accent-pink:#ec4899;--accent-green:#22c55e;--accent-orange:#f59e0b;
+--accent-gradient:linear-gradient(135deg,#00d4ff,#7c3aed);
+--sidebar-width:220px;--sidebar-bg:rgba(15,23,42,0.75);
+--radius-sm:6px;--radius-md:10px;--radius-lg:16px;
+--shadow-card:0 2px 16px rgba(0,0,0,0.3);--shadow-glow:0 0 20px rgba(0,212,255,0.1);--transition:0.2s ease
+}
+html{font-size:14px}
+body{
+font-family:'Inter','PingFang SC','Microsoft YaHei',-apple-system,sans-serif;
+background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow:hidden
+}
+body::before{
+content:'';position:fixed;top:0;left:0;right:0;bottom:0;
+background:radial-gradient(ellipse 80% 60% at 20% 20%,rgba(0,212,255,0.04) 0%,transparent 60%),
+radial-gradient(ellipse 60% 50% at 80% 80%,rgba(124,58,237,0.04) 0%,transparent 60%);
+pointer-events:none;z-index:0
+}
+.app-layout{display:flex;height:100vh;position:relative;z-index:1}
+.sidebar{
+width:var(--sidebar-width);min-width:var(--sidebar-width);
+background:var(--sidebar-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+border-right:1px solid var(--border-color);display:flex;flex-direction:column;padding:24px 0;gap:4px;z-index:2
+}
+.sidebar-brand{padding:0 20px 24px;border-bottom:1px solid var(--border-color);margin-bottom:12px}
+.sidebar-brand h1{font-size:1.15rem;font-weight:800;background:var(--accent-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.3}
+.sidebar-brand small{font-size:0.7rem;color:var(--text-muted);-webkit-text-fill-color:var(--text-muted);display:block;margin-top:2px;font-weight:500;letter-spacing:.5px}
+.nav-item{
+display:flex;align-items:center;gap:12px;padding:11px 20px;margin:1px 10px;border-radius:var(--radius-sm);
+cursor:pointer;color:var(--text-secondary);transition:all var(--transition);font-size:.85rem;font-weight:500;
+border:none;background:none;width:calc(100% - 20px);text-align:left
+}
+.nav-item svg{width:18px;height:18px;flex-shrink:0}
+.nav-item:hover{background:rgba(255,255,255,0.06);color:var(--text-primary)}
+.nav-item.active{background:rgba(0,212,255,0.1);color:var(--accent-cyan);box-shadow:inset 3px 0 0 var(--accent-cyan)}
+.nav-item .badge{margin-left:auto;background:rgba(236,72,153,0.2);color:var(--accent-pink);font-size:.65rem;padding:2px 7px;border-radius:10px;font-weight:600}
+.main-content{flex:1;overflow-y:auto;overflow-x:hidden;padding:28px 32px 40px;position:relative;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent}
+.main-content::-webkit-scrollbar{width:4px}
+.main-content::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.page{display:none}
+.page.active{display:block}
+.section-title{font-size:1.3rem;font-weight:700;margin-bottom:20px;letter-spacing:-.3px}
+.card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:20px;transition:all var(--transition)}
+.card:hover{border-color:var(--border-hover)}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.card-title{font-size:.85rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:20px;display:flex;flex-direction:column;gap:8px;transition:all var(--transition)}
+.kpi-card:hover{border-color:var(--border-hover);transform:translateY(-1px);box-shadow:var(--shadow-card)}
+.kpi-card .kpi-label{font-size:.75rem;color:var(--text-muted);font-weight:500;display:flex;align-items:center;gap:6px}
+.kpi-card .kpi-label .icon-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.kpi-card .kpi-value{font-size:1.6rem;font-weight:800;letter-spacing:-.5px}
+.kpi-card .kpi-change{font-size:.72rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.kpi-change.up{color:var(--accent-green)}
+.kpi-change.down{color:var(--accent-pink)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.two-col-wide{display:grid;grid-template-columns:7fr 3fr;gap:16px;margin-bottom:20px}
+.two-col-narrow{display:grid;grid-template-columns:6fr 4fr;gap:16px;margin-bottom:20px}
+.full-row{margin-bottom:20px}
+.tag-cloud{display:flex;flex-wrap:wrap;gap:8px}
+.tag{display:inline-flex;align-items:center;padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:500;background:rgba(0,212,255,0.08);color:var(--accent-cyan);border:1px solid rgba(0,212,255,0.15);cursor:default;transition:all var(--transition)}
+.tag:hover{background:rgba(0,212,255,0.15)}
+.tag-lg{font-size:.95rem;padding:8px 18px}
+.tag-purple{background:rgba(124,58,237,0.1);color:#a78bfa;border-color:rgba(124,58,237,0.2)}
+.tag-pink{background:rgba(236,72,153,0.1);color:#f472b6;border-color:rgba(236,72,153,0.2)}
+.tag-green{background:rgba(34,197,94,0.1);color:#4ade80;border-color:rgba(34,197,94,0.2)}
+.tag-orange{background:rgba(245,158,11,0.1);color:#fbbf24;border-color:rgba(245,158,11,0.2)}
+.tag-sm{font-size:.7rem;padding:3px 10px}
+.cover-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.cover-item{aspect-ratio:9/16;border-radius:var(--radius-sm);background-size:cover;background-position:center;position:relative;cursor:pointer;overflow:hidden;border:1px solid var(--border-color);transition:all var(--transition)}
+.cover-item:hover{transform:scale(1.03);border-color:var(--accent-cyan)}
+.cover-item .cover-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(0,0,0,0.8) 0%,transparent 50%);display:flex;flex-direction:column;justify-content:flex-end;padding:8px;opacity:0;transition:opacity var(--transition)}
+.cover-item:hover .cover-overlay{opacity:1}
+.cover-overlay span{font-size:.6rem;color:rgba(255,255,255,0.9);line-height:1.3}
+.cover-overlay .stat{font-weight:600;color:var(--accent-cyan)}
+.chart-container{position:relative;width:100%;height:280px}
+.chart-container-lg{position:relative;width:100%;height:320px}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{text-align:left;padding:10px 14px;font-size:.72rem;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border-color);cursor:pointer;user-select:none;white-space:nowrap}
+.data-table th:hover{color:var(--text-secondary)}
+.data-table th .sort-icon{margin-left:4px;opacity:.4}
+.data-table td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:.82rem;color:var(--text-secondary)}
+.data-table tr:hover td{background:rgba(255,255,255,0.02)}
+.data-table td:first-child{font-weight:600;color:var(--text-primary)}
+.score-bar{display:inline-block;height:6px;border-radius:3px;background:var(--accent-gradient);vertical-align:middle;margin-right:6px}
+.filter-bar{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.filter-btn{padding:6px 16px;border-radius:20px;border:1px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:.78rem;cursor:pointer;transition:all var(--transition);font-family:inherit;font-weight:500}
+.filter-btn:hover{border-color:var(--border-hover);color:var(--text-primary)}
+.filter-btn.active{background:rgba(0,212,255,0.12);border-color:var(--accent-cyan);color:var(--accent-cyan)}
+.search-box{display:flex;align-items:center;background:rgba(255,255,255,0.05);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:0 14px;gap:8px;flex:1;max-width:360px}
+.search-box svg{width:16px;height:16px;color:var(--text-muted);flex-shrink:0}
+.search-box input{background:none;border:none;outline:none;color:var(--text-primary);font-size:.82rem;padding:10px 0;width:100%;font-family:inherit}
+.search-box input::placeholder{color:var(--text-muted)}
+.btn-primary{display:inline-flex;align-items:center;gap:8px;padding:10px 22px;border:none;border-radius:var(--radius-sm);background:var(--accent-gradient);color:#fff;font-weight:600;font-size:.82rem;cursor:pointer;transition:all var(--transition);font-family:inherit}
+.btn-primary:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 16px rgba(0,212,255,0.25)}
+.btn-primary svg{width:16px;height:16px}
+.btn-ghost{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);font-size:.78rem;cursor:pointer;transition:all var(--transition);font-family:inherit}
+.btn-ghost:hover{border-color:var(--border-hover);color:var(--text-primary)}
+.idea-list{display:flex;flex-direction:column;gap:12px}
+.idea-card{display:flex;align-items:center;gap:16px;background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px;cursor:grab;transition:all var(--transition)}
+.idea-card:hover{border-color:var(--border-hover);background:var(--bg-card-hover)}
+.idea-card:active{cursor:grabbing}
+.idea-card.sortable-chosen{border-color:var(--accent-cyan);box-shadow:var(--shadow-glow)}
+.idea-thumb{width:52px;height:52px;border-radius:var(--radius-sm);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem}
+.idea-body{flex:1;min-width:0}
+.idea-body .formula{font-size:.88rem;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.idea-body .formula span.highlight{color:var(--accent-cyan)}
+.idea-body .meta{font-size:.7rem;color:var(--text-muted)}
+.idea-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+.idea-status{padding:4px 12px;border-radius:12px;font-size:.7rem;font-weight:600;white-space:nowrap}
+.status-draft{background:rgba(34,197,94,0.1);color:var(--accent-green)}
+.status-making{background:rgba(245,158,11,0.1);color:var(--accent-orange)}
+.status-published{background:rgba(236,72,153,0.1);color:var(--accent-pink)}
+.idea-score{font-size:.95rem;font-weight:700;color:var(--accent-cyan);white-space:nowrap}
+.drag-handle{color:var(--text-muted);cursor:grab;width:20px;height:20px;flex-shrink:0}
+.hotspot-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.hotspot-header .date-badge{font-size:.85rem;padding:6px 16px;border-radius:20px;background:rgba(0,212,255,0.08);color:var(--accent-cyan);border:1px solid rgba(0,212,255,0.15);font-weight:500}
+.word-cloud{display:flex;flex-wrap:wrap;gap:6px 12px;padding:20px;min-height:200px;align-items:center;justify-content:center}
+.word-cloud .wc-item{cursor:default;transition:all var(--transition);padding:4px 8px;border-radius:4px}
+.word-cloud .wc-item:hover{background:rgba(0,212,255,0.08);transform:scale(1.05)}
+.suggestion-card{background:linear-gradient(135deg,rgba(0,212,255,0.06),rgba(124,58,237,0.06));border:1px solid rgba(0,212,255,0.15);border-radius:var(--radius-md);padding:18px;margin-bottom:12px}
+.suggestion-card .hot-label{font-size:.7rem;color:var(--accent-orange);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.suggestion-card .suggestion-text{font-size:.85rem;line-height:1.6;color:var(--text-secondary)}
+.suggestion-card .suggestion-text strong{color:var(--accent-cyan)}
+.compare-row{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:20px}
+.compare-card{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:18px 22px;display:flex;align-items:center;gap:16px}
+.compare-card .cmp-icon{width:40px;height:40px;border-radius:var(--radius-sm);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.compare-card .cmp-icon.up{background:rgba(34,197,94,0.15);color:var(--accent-green)}
+.compare-card .cmp-icon.down{background:rgba(236,72,153,0.15);color:var(--accent-pink)}
+.compare-card .cmp-label{font-size:.72rem;color:var(--text-muted);margin-bottom:4px}
+.compare-card .cmp-value{font-size:1.1rem;font-weight:700}
+.compare-card .cmp-delta{font-size:.78rem;font-weight:600;margin-top:2px}
+.cmp-delta.up{color:var(--accent-green)}
+.cmp-delta.down{color:var(--accent-pink)}
+.notes-area{background:var(--bg-card);border:1px solid var(--border-color);border-radius:var(--radius-md);padding:20px;min-height:120px}
+.notes-area textarea{width:100%;min-height:80px;background:transparent;border:none;outline:none;color:var(--text-primary);font-size:.82rem;font-family:inherit;resize:vertical;line-height:1.6}
+.notes-area textarea::placeholder{color:var(--text-muted)}
+.note-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,0.04);font-size:.82rem;color:var(--text-secondary);line-height:1.5}
+.note-item:last-child{border-bottom:none}
+.note-item .note-dot{width:6px;height:6px;border-radius:50%;background:var(--accent-pink);flex-shrink:0;margin-top:6px}
+.fab{position:fixed;bottom:32px;right:32px;width:52px;height:52px;border-radius:50%;background:var(--accent-gradient);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 20px rgba(0,212,255,0.3);transition:all var(--transition);z-index:100}
+.fab:hover{transform:scale(1.1);box-shadow:0 6px 28px rgba(0,212,255,0.4)}
+.fab svg{width:22px;height:22px}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal-box{background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:28px;width:480px;max-width:90vw;box-shadow:0 16px 48px rgba(0,0,0,0.5)}
+.modal-box h3{font-size:1.05rem;font-weight:700;margin-bottom:6px}
+.modal-box .modal-sub{font-size:.78rem;color:var(--text-muted);margin-bottom:20px}
+.modal-box label{display:block;font-size:.78rem;color:var(--text-secondary);font-weight:500;margin-bottom:6px}
+.modal-box input,.modal-box select,.modal-box textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text-primary);font-size:.82rem;font-family:inherit;outline:none;margin-bottom:14px;transition:border-color var(--transition)}
+.modal-box input:focus,.modal-box select:focus,.modal-box textarea:focus{border-color:var(--accent-cyan)}
+.modal-box textarea{min-height:80px;resize:vertical}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:8px}
+.btn-secondary{padding:10px 20px;border:1px solid var(--border-color);border-radius:var(--radius-sm);background:transparent;color:var(--text-secondary);font-size:.82rem;cursor:pointer;transition:all var(--transition);font-family:inherit;font-weight:500}
+.btn-secondary:hover{border-color:var(--border-hover);color:var(--text-primary)}
+.tooltip-trigger{position:relative;cursor:pointer}
+.tooltip-trigger .tooltip-popup{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#1e293b;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:10px 14px;font-size:.72rem;color:var(--text-secondary);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:0 4px 16px rgba(0,0,0,0.4);z-index:50}
+.tooltip-trigger:hover .tooltip-popup{opacity:1}
+.table-scroll{overflow-x:auto}
+@media(max-width:1024px){
+.kpi-row{grid-template-columns:repeat(2,1fr)}
+.two-col,.two-col-wide,.two-col-narrow{grid-template-columns:1fr}
+.compare-row{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+.sidebar{width:60px;min-width:60px;padding:16px 0}
+.sidebar-brand{padding:0 12px 16px}
+.sidebar-brand h1{font-size:0}
+.sidebar-brand h1::after{content:'AI漫剧';font-size:.8rem;-webkit-text-fill-color:var(--text-primary)}
+.sidebar-brand small{display:none}
+.nav-item{padding:12px;margin:1px 6px;justify-content:center}
+.nav-item span{display:none}
+.nav-item .badge{display:none}
+.nav-item svg{width:20px;height:20px}
+.main-content{padding:20px 16px}
+.kpi-row{grid-template-columns:1fr 1fr}
+.cover-wall{grid-template-columns:repeat(3,1fr)}
+.fab{bottom:20px;right:20px;width:48px;height:48px}
+}
+</style>
+</head>
+<body>
+<div class="app-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <h1>AI漫剧驾驶舱</h1>
+      <small>选题分析系统 v1.0</small>
+    </div>
+    <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><i data-lucide="gauge-circle"></i><span>驾驶舱总览</span></button>
+    <button class="nav-item" data-page="track" onclick="switchPage('track')"><i data-lucide="compass"></i><span>赛道风向标</span><span class="badge">8</span></button>
+    <button class="nav-item" data-page="ideas" onclick="switchPage('ideas')"><i data-lucide="lightbulb"></i><span>灵感选题库</span><span class="badge" id="ideaBadge">6</span></button>
+    <button class="nav-item" data-page="hotspot" onclick="switchPage('hotspot')"><i data-lucide="zap"></i><span>今日弹药库</span></button>
+    <button class="nav-item" data-page="report" onclick="switchPage('report')"><i data-lucide="bar-chart-3"></i><span>周报分析室</span></button>
+  </nav>
+  <main class="main-content" id="mainContent">
+    <!-- Dashboard -->
+    <div class="page active" id="page-dashboard">
+      <div class="kpi-row" id="kpiRow"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">今日实时飙升词条</span></div>
+          <div class="tag-cloud" id="hotTags"></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">近期爆款封面墙</span></div>
+          <div class="cover-wall" id="coverWall"></div>
+        </div>
+      </div>
+      <div class="full-row">
+        <div class="card">
+          <div class="card-header"><span class="card-title">近7天爆款题材分布趋势</span></div>
+          <div class="chart-container-lg"><canvas id="trendChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <!-- Track -->
+    <div class="page" id="page-track">
+      <div class="filter-bar" id="trackFilters">
+        <button class="filter-btn active" data-filter="day">今日</button>
+        <button class="filter-btn" data-filter="week">本周</button>
+        <button class="filter-btn" data-filter="month">本月</button>
+        <span style="color:var(--text-muted);font-size:.78rem;">|</span>
+        <button class="filter-btn active" data-filter="douyin">抖音</button>
+        <button class="filter-btn" data-filter="kuaishou">快手</button>
+        <button class="filter-btn" data-filter="hongguo">红果</button>
+      </div>
+      <div class="two-col-wide">
+        <div class="card" style="padding:0;overflow:hidden;">
+          <div class="table-scroll">
+            <table class="data-table" id="trackTable"></table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">赛道热度气泡图</span></div>
+          <div class="chart-container" style="height:400px;"><canvas id="bubbleChart"></canvas></div>
+        </div>
+      </div>
+    </div>
+    <!-- Ideas -->
+    <div class="page" id="page-ideas">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
+        <button class="btn-primary" onclick="grabHotIdeas()"><i data-lucide="antenna"></i><span>一键抓取热点</span></button>
+        <div class="search-box">
+          <i data-lucide="search"></i>
+          <input type="text" placeholder="搜索关键词或情绪词…" id="ideaSearch" oninput="filterIdeas()">
+        </div>
+        <span style="font-size:.72rem;color:var(--text-muted);margin-left:auto;" id="ideaCount"></span>
+      </div>
+      <div class="idea-list" id="ideaList"></div>
+    </div>
+    <!-- Hotspot -->
+    <div class="page" id="page-hotspot">
+      <div class="hotspot-header">
+        <span class="section-title" style="margin-bottom:0;">今日热点雷达图</span>
+        <span class="date-badge" id="todayBadge"></span>
+      </div>
+      <div class="two-col-narrow">
+        <div class="card">
+          <div class="card-header"><span class="card-title">热点话题雷达</span></div>
+          <div class="chart-container"><canvas id="radarChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">热点话题分布</span></div>
+          <div class="word-cloud" id="hotWordCloud"></div>
+        </div>
+      </div>
+      <div class="full-row">
+        <div class="card">
+          <div class="card-header"><span class="card-title">借势建议区</span></div>
+          <div id="suggestionArea"></div>
+        </div>
+      </div>
+    </div>
+    <!-- Report -->
+    <div class="page" id="page-report">
+      <div class="compare-row" id="compareRow"></div>
+      <div class="two-col">
+        <div class="card">
+          <div class="card-header"><span class="card-title">爆款词频热力图</span></div>
+          <div class="chart-container"><canvas id="heatmapChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><span class="card-title">更新频率 vs 流量关系</span></div>
+          <div class="chart-container"><canvas id="scatterChart"></canvas></div>
+        </div>
+      </div>
+      <div class="full-row">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">本周踩坑记录 / 避雷清单</span>
+            <button class="btn-ghost" onclick="addNote()" style="font-size:.72rem;padding:4px 12px;"><i data-lucide="plus" style="width:12px;height:12px;"></i>添加记录</button>
+          </div>
+          <div class="notes-area" id="notesArea"></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+<button class="fab" onclick="openQuickNote()" title="快速记录灵感"><i data-lucide="pen-line"></i></button>
+<div class="modal-overlay" id="quickNoteModal">
+  <div class="modal-box">
+    <h3>快速记录灵感</h3>
+    <p class="modal-sub">随手记下刷到的爆款思路，自动归类到灵感选题库</p>
+    <label>标题 / 关键词</label>
+    <input type="text" id="modalTitle" placeholder="例如：重生 + 豪门 + 反转…">
+    <label>爆款公式</label>
+    <input type="text" id="modalFormula" placeholder="例如：豪门恩怨 + 失忆梗 + 反转打脸">
+    <label>热度潜力分</label>
+    <select id="modalScore">
+      <option value="10">10 - 现象级爆款</option>
+      <option value="9">9 - 大爆款</option>
+      <option value="8" selected>8 - 优秀</option>
+      <option value="7">7 - 良好</option>
+      <option value="6">6 - 及格</option>
+      <option value="5">5 - 待观察</option>
+    </select>
+    <label>备注</label>
+    <textarea id="modalNote" placeholder="补充细节…"></textarea>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeQuickNote()">取消</button>
+      <button class="btn-primary" onclick="saveQuickNote()"><i data-lucide="check"></i>保存到选题库</button>
+    </div>
+  </div>
+</div>
+<script>
+const STORAGE_KEY='ai_drama_dashboard';
+let state=loadState();
+let chartInstances={};
+let currentPage='dashboard';
+let trackSort={col:'rate',asc:false};
+
+function getDefaultState(){return{
+ideas:[
+{id:1,formula:'豪门恩怨 + 失忆梗 + 反转打脸',score:8.5,status:'draft',created:'2026-07-25',thumb:'💎'},
+{id:2,formula:'重生逆袭 + 机甲战斗 + 兄弟反目',score:9.2,status:'draft',created:'2026-07-26',thumb:'⚔️'},
+{id:3,formula:'古风虐恋 + 替身文学 + 追妻火葬场',score:7.8,status:'making',created:'2026-07-24',thumb:'🌸'},
+{id:4,formula:'末世逃生 + 异能觉醒 + 团队背叛',score:8.1,status:'published',created:'2026-07-23',thumb:'🌍'},
+{id:5,formula:'甜宠日常 + 先婚后爱 + 双面身份',score:7.5,status:'draft',created:'2026-07-27',thumb:'💕'},
+{id:6,formula:'悬疑推理 + 轮回重生 + 高智商对决',score:8.9,status:'making',created:'2026-07-22',thumb:'🔍'},
+],
+notes:['本周不要用慢节奏BGM，完播率下跌5%','女频题材在20:00-22:00发布，完播率提升12%','开场前3秒加入悬念对话，跳出率降低30%'],
+nextIdeaId:7
+}}
+
+function loadState(){try{const r=localStorage.getItem(STORAGE_KEY);if(r)return JSON.parse(r)}catch(e){}return getDefaultState()}
+function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+
+function switchPage(page){
+document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+document.getElementById('page-'+page).classList.add('active');
+document.querySelector('.nav-item[data-page="'+page+'"]').classList.add('active');
+currentPage=page;
+renderPage(page);
+// Refresh lucide icons after DOM update
+if(typeof lucide!=='undefined')lucide.createIcons();
+}
+
+function renderPage(page){
+switch(page){
+case'dashboard':renderDashboard();break;
+case'track':renderTrack();break;
+case'ideas':renderIdeas();break;
+case'hotspot':renderHotspot();break;
+case'report':renderReport();break;
+}
+}
+
+function destroyChart(key){if(chartInstances[key]){chartInstances[key].destroy();delete chartInstances[key]}}
+
+// ===== DASHBOARD =====
+function renderDashboard(){renderKPI();renderHotTags();renderCoverWall();renderTrendChart()}
+
+function renderKPI(){
+const kpis=[
+{label:'今日全网AI漫剧热点指数',value:'87.6',unit:'',dot:'#00d4ff',change:'+2.3%',up:true},
+{label:'待跟进的爆款选题',value:'12',unit:'个',dot:'#ec4899',change:'+3 vs 昨日',up:true},
+{label:'本周追踪账号涨粉均值',value:'3.2',unit:'万',dot:'#22c55e',change:'+15.2%',up:true},
+{label:'我的内容排期（今日待发布）',value:'5',unit:'条',dot:'#f59e0b',change:'vs 昨日 -2',up:false},
+];
+document.getElementById('kpiRow').innerHTML=kpis.map(k=>`
+<div class="kpi-card">
+<div class="kpi-label"><span class="icon-dot" style="background:${k.dot}"></span>${k.label}</div>
+<div class="kpi-value">${k.value}<span style="font-size:.7rem;font-weight:500;color:var(--text-muted);margin-left:2px;">${k.unit}</span></div>
+<div class="kpi-change ${k.up?'up':'down'}">${k.up?'↑':'↓'} ${k.change}</div>
+</div>`).join('')
+}
+
+function renderHotTags(){
+const tags=[
+{text:'#AI漫剧·总裁',cat:''},{text:'#古风虐恋·替身',cat:'purple'},{text:'#重生逆袭·打脸',cat:'pink'},
+{text:'#末世机甲·异能',cat:'green'},{text:'#豪门恩怨·反转',cat:'orange'},{text:'#悬疑轮回·烧脑',cat:''},
+{text:'#甜宠日常·先婚后爱',cat:'purple'},{text:'#赘婿龙王·觉醒',cat:'pink'},
+];
+document.getElementById('hotTags').innerHTML=tags.map(t=>`<span class="tag tag-lg ${t.cat?'tag-'+t.cat:''}">${t.text}</span>`).join('')
+}
+
+function renderCoverWall(){
+const covers=[
+{bg:'linear-gradient(135deg,#1a0533,#7c3aed)',label:'重生之顶级豪门',rate:'92%',likes:'1:3.2'},
+{bg:'linear-gradient(135deg,#0a1628,#00d4ff)',label:'机甲战神的宠妻',rate:'88%',likes:'1:2.8'},
+{bg:'linear-gradient(135deg,#1a0a0a,#ec4899)',label:'替身新娘逆袭',rate:'95%',likes:'1:4.1'},
+{bg:'linear-gradient(135deg,#0a1a0a,#22c55e)',label:'末世之我是女王',rate:'85%',likes:'1:2.5'},
+{bg:'linear-gradient(135deg,#1a1a0a,#f59e0b)',label:'龙王归来娶我',rate:'90%',likes:'1:3.6'},
+];
+document.getElementById('coverWall').innerHTML=covers.map(c=>`
+<div class="cover-item" style="background:${c.bg};">
+<div style="position:absolute;top:6px;left:6px;font-size:.55rem;color:rgba(255,255,255,0.6);font-weight:600;background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">漫剧</div>
+<div style="position:absolute;bottom:6px;left:6px;right:6px;font-size:.6rem;color:rgba(255,255,255,0.7);font-weight:600;text-shadow:0 1px 4px rgba(0,0,0,0.5);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.label}</div>
+<div class="cover-overlay"><span>完播率 <span class="stat">${c.rate}</span></span><span>点赞比 <span class="stat">${c.likes}</span></span></div>
+</div>`).join('')
+}
+
+function renderTrendChart(){
+const ctx=document.getElementById('trendChart');if(!ctx)return;
+destroyChart('trend');
+chartInstances.trend=new Chart(ctx,{
+type:'line',
+data:{
+labels:['7/22','7/23','7/24','7/25','7/26','7/27','7/28'],
+datasets:[
+{label:'女频',data:[65,72,78,85,82,88,92],borderColor:'#ec4899',backgroundColor:'rgba(236,72,153,0.1)',fill:true,tension:.4,pointRadius:3},
+{label:'男频',data:[55,58,62,70,75,78,82],borderColor:'#00d4ff',backgroundColor:'rgba(0,212,255,0.1)',fill:true,tension:.4,pointRadius:3},
+{label:'悬疑',data:[45,52,58,55,62,68,72],borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.1)',fill:true,tension:.4,pointRadius:3},
+{label:'古风',data:[70,68,72,75,70,74,78],borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:.4,pointRadius:3},
+]},
+options:{
+responsive:true,maintainAspectRatio:false,
+interaction:{mode:'index',intersect:false},
+plugins:{legend:{position:'top',labels:{color:'#94a3b8',usePointStyle:true,padding:16,font:{size:11}}}},
+scales:{
+x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:10}}},
+y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:10}},beginAtZero:true}
+}}
+})
+}
+
+// ===== TRACK =====
+function renderTrack(){renderTrackTable();renderBubbleChart()}
+
+function getTrackData(){return[
+{name:'女频虐恋',active:186,rate:'12.3%',avgFans:'45.2万',comp:8.5,supply:186,engagement:92,total:8500},
+{name:'男频赘婿',active:152,rate:'9.8%',avgFans:'52.1万',comp:7.2,supply:152,engagement:78,total:6200},
+{name:'悬疑烧脑',active:98,rate:'15.6%',avgFans:'38.7万',comp:8.9,supply:98,engagement:105,total:4800},
+{name:'古风仙侠',active:134,rate:'8.2%',avgFans:'41.3万',comp:6.5,supply:134,engagement:65,total:5400},
+{name:'末世科幻',active:72,rate:'18.1%',avgFans:'33.5万',comp:9.1,supply:72,engagement:128,total:3900},
+{name:'重生逆袭',active:208,rate:'11.5%',avgFans:'48.9万',comp:7.8,supply:208,engagement:88,total:9200},
+{name:'甜宠日常',active:165,rate:'7.4%',avgFans:'36.2万',comp:6.1,supply:165,engagement:55,total:5100},
+{name:'豪门商战',active:88,rate:'13.2%',avgFans:'55.8万',comp:8.2,supply:88,engagement:98,total:4500},
+]}
+
+function renderTrackTable(){
+const data=getTrackData();
+const sorted=[...data].sort((a,b)=>{let va=a[trackSort.col],vb=b[trackSort.col];if(typeof va==='string'){va=parseFloat(va.replace(/[^.0-9]/g,''))||0;vb=parseFloat(vb.replace(/[^.0-9]/g,''))||0}return trackSort.asc?va-vb:vb-va});
+const cols=[{key:'name',label:'赛道名称'},{key:'active',label:'在播数量'},{key:'rate',label:'爆款率'},{key:'avgFans',label:'头部账号平均粉丝'},{key:'comp',label:'竞争力评分'}];
+document.getElementById('trackTable').innerHTML=
+'<thead><tr>'+cols.map(c=>`<th onclick="sortTrack('${c.key}')">${c.label}<span class="sort-icon">${trackSort.col===c.key?(trackSort.asc?'▲':'▼'):'⇅'}</span></th>`).join('')+'</tr></thead>'+
+'<tbody>'+sorted.map(d=>`<tr><td>${d.name}</td><td>${d.active}</td><td style="color:${parseFloat(d.rate)>12?'var(--accent-green)':'var(--text-secondary)'}">${d.rate}</td><td>${d.avgFans}</td><td><span class="score-bar" style="width:${d.comp*8}px"></span>${d.comp}/10</td></tr>`).join('')+'</tbody>'
+}
+
+function sortTrack(col){if(trackSort.col===col)trackSort.asc=!trackSort.asc;else{trackSort.col=col;trackSort.asc=false}renderTrackTable()}
+
+function renderBubbleChart(){
+const ctx=document.getElementById('bubbleChart');if(!ctx)return;
+destroyChart('bubble');
+const data=getTrackData();
+const colors=['#ec4899','#00d4ff','#7c3aed','#22c55e','#f59e0b','#a78bfa','#f472b6','#34d399'];
+chartInstances.bubble=new Chart(ctx,{
+type:'bubble',
+data:{datasets:data.map((d,i)=>({label:d.name,data:[{x:d.supply,y:d.engagement,r:Math.sqrt(d.total)*.4}],backgroundColor:colors[i]+'55',borderColor:colors[i],borderWidth:1.5}))},
+options:{
+responsive:true,maintainAspectRatio:false,
+plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:10},padding:10,boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+' 供给'+ctx.parsed.x+' 互动'+ctx.parsed.y}}},
+scales:{
+x:{title:{display:true,text:'供给量（在播数量）',color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:9}}},
+y:{title:{display:true,text:'平均互动量',color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:9}}}
+}}
+})
+}
+
+// ===== IDEAS =====
+function renderIdeas(){
+const list=document.getElementById('ideaList');
+const ideas=state.ideas;
+if(!list)return;
+list.innerHTML=ideas.map(d=>`
+<div class="idea-card" data-id="${d.id}">
+<div class="drag-handle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg></div>
+<div class="idea-thumb" style="background:linear-gradient(135deg,${d.thumb==='💎'?'#1a0533,#7c3aed':d.thumb==='⚔️'?'#0a1628,#00d4ff':d.thumb==='🌸'?'#1a0a0a,#ec4899':d.thumb==='🌍'?'#0a1a0a,#22c55e':d.thumb==='💕'?'#1a0a1a,#f472b6':'#1a1a0a,#f59e0b'});">${d.thumb}</div>
+<div class="idea-body">
+<div class="formula tooltip-trigger">${d.formula.split('+').map(s=>'<span class="highlight">'+s.trim()+'</span>').join(' + ')}<div class="tooltip-popup">黄金3秒脚本：<br>「${d.formula.split('+').map(s=>s.trim()).slice(0,2).join('，')}」<br>开场即高潮</div></div>
+<div class="meta">创建于 ${d.created}</div>
+</div>
+<div class="idea-right">
+<span class="idea-status ${d.status==='draft'?'status-draft':d.status==='making'?'status-making':'status-published'}">${d.status==='draft'?'🟢 待写剧本':d.status==='making'?'🟡 制作中':'🔴 已发布'}</span>
+<span class="idea-score">${d.score}/10</span>
+</div>
+</div>`).join('');
+document.getElementById('ideaCount').textContent='共 '+ideas.length+' 条选题';
+if(window.ideaSortable)window.ideaSortable.destroy();
+window.ideaSortable=new Sortable(list,{handle:'.drag-handle',animation:200,ghostClass:'sortable-chosen',onEnd:function(evt){const items=[...list.querySelectorAll('.idea-card')];state.ideas=items.map(el=>state.ideas.find(i=>i.id==el.dataset.id));saveState()}});
+}
+
+function filterIdeas(){const q=document.getElementById('ideaSearch').value.trim().toLowerCase();document.querySelectorAll('.idea-card').forEach(c=>{c.style.display=q&&!c.textContent.toLowerCase().includes(q)?'none':'flex'})}
+
+function grabHotIdeas(){
+const ns=[{formula:'AI穿越 + 古代权谋 + 现代科技',score:8.7,thumb:'🤖'},{formula:'末世女王 + 废柴逆袭 + 忠犬守护',score:8.3,thumb:'👑'},{formula:'双面总裁 + 带球跑 + 追妻火葬场',score:7.9,thumb:'👔'}];
+ns.forEach(n=>{state.ideas.unshift({id:state.nextIdeaId++,formula:n.formula,score:n.score,status:'draft',created:new Date().toISOString().slice(0,10).replace(/-/g,'/'),thumb:n.thumb})});
+saveState();renderIdeas();document.getElementById('ideaBadge').textContent=state.ideas.length
+}
+
+// ===== HOTSPOT =====
+function renderHotspot(){
+const n=new Date();document.getElementById('todayBadge').textContent=n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日';
+renderRadarChart();renderWordCloud();renderSuggestions()
+}
+
+function renderRadarChart(){
+const ctx=document.getElementById('radarChart');if(!ctx)return;
+destroyChart('radar');
+chartInstances.radar=new Chart(ctx,{
+type:'radar',
+data:{labels:['AI漫剧','重生逆袭','甜宠','悬疑','古风','末世','豪门'],datasets:[{label:'热度指数',data:[95,88,72,85,78,65,82],backgroundColor:'rgba(0,212,255,0.15)',borderColor:'#00d4ff',pointBackgroundColor:'#00d4ff',pointBorderColor:'#fff',pointRadius:4,borderWidth:2}]},
+options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{grid:{color:'rgba(255,255,255,0.06)'},angleLines:{color:'rgba(255,255,255,0.06)'},pointLabels:{color:'#94a3b8',font:{size:10}},ticks:{color:'#64748b',backdropColor:'transparent',font:{size:9}},min:0,max:100}}}
+})
+}
+
+function renderWordCloud(){
+const ws=[{text:'AI漫剧',w:95},{text:'重生',w:88},{text:'逆袭',w:82},{text:'总裁',w:78},{text:'虐恋',w:75},{text:'末世',w:70},{text:'机甲',w:68},{text:'古风',w:65},{text:'甜宠',w:62},{text:'豪门',w:60},{text:'悬疑',w:58},{text:'替身',w:55},{text:'龙王',w:52},{text:'觉醒',w:50},{text:'先婚后爱',w:48},{text:'商战',w:45}];
+document.getElementById('hotWordCloud').innerHTML=ws.map(w=>{const s=.7+(w.w/100)*1.1;const h=185+(w.w/100)*60;return'<span class="wc-item" style="font-size:'+s.toFixed(2)+'rem;color:hsl('+h.toFixed(0)+',60%,65%);font-weight:'+(w.w>70?700:500)+';">'+w.text+'</span>'}).join('')
+}
+
+function renderSuggestions(){
+const ss=[
+{label:'🔥 Top 1 热点',text:'热点 <strong>「AI漫剧·总裁」</strong> 建议改编为 <strong>「豪门恩怨+AI换脸+反转打脸」</strong> 风格，参考对标账号 <strong>@AI短剧工厂</strong> 的运镜方式，开场用AI变脸特效抓眼球。'},
+{label:'🔥 Top 2 热点',text:'热点 <strong>「重生逆袭·机甲」</strong> 建议改编为 <strong>「末世+机甲+兄弟反目」</strong> 风格，参考对标账号 <strong>@机甲宇宙</strong> 的快节奏剪辑，前3秒用机甲变身吸睛。'},
+{label:'🔥 Top 3 热点',text:'热点 <strong>「古风虐恋·替身」</strong> 建议改编为 <strong>「替身文学+追妻火葬场」</strong> 风格，参考对标账号 <strong>@古风小剧场</strong> 的服化道质感，利用慢镜头强化虐心瞬间。'},
+];
+document.getElementById('suggestionArea').innerHTML=ss.map(s=>'<div class="suggestion-card"><div class="hot-label">'+s.label+'</div><div class="suggestion-text">'+s.text+'</div></div>').join('')
+}
+
+// ===== REPORT =====
+function renderReport(){renderCompare();renderHeatmap();renderScatter();renderNotes()}
+
+function renderCompare(){
+document.getElementById('compareRow').innerHTML=
+'<div class="compare-card"><div class="cmp-icon up"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div><div class="cmp-label">本周总播放中位数</div><div class="cmp-value">128.5万</div><div class="cmp-delta up">↑ +18.3% vs 上周</div></div></div>'+
+'<div class="compare-card"><div class="cmp-icon down"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div><div><div class="cmp-label">本周平均完播率</div><div class="cmp-value">34.2%</div><div class="cmp-delta down">↓ -2.1% vs 上周</div></div></div>'
+}
+
+function renderHeatmap(){
+const ctx=document.getElementById('heatmapChart');if(!ctx)return;
+destroyChart('heatmap');
+const words=['离婚协议','龙王觉醒','重生','替身','逆袭','机甲','虐恋','豪门','甜宠','悬疑'];
+const scenes=['开场3秒','中段高潮','结尾反转'];
+const vals=[[95,72,88,65,58,42,78,85,32,45],[55,88,68,72,82,65,52,48,58,62],[72,52,92,78,68,48,85,62,35,88]];
+const data=[];vals.forEach((row,yi)=>{row.forEach((v,xi)=>{data.push({x:xi,y:yi,v})})});
+chartInstances.heatmap=new Chart(ctx,{
+type:'matrix',
+data:{datasets:[{label:'词频热度',data:data,backgroundColor(ctx){const v=ctx.dataset.data[ctx.dataIndex].v;return'rgba(0,212,255,'+((v/100)*.8+.1)+')'},borderColor:'rgba(255,255,255,0.06)',borderWidth:1,width(ctx){const w=ctx.chart.chartArea?.width??300;return(w-10)/10-1},height(ctx){const h=ctx.chart.chartArea?.height??200;return(h-10)/3-1}}]},
+options:{
+responsive:true,maintainAspectRatio:false,
+plugins:{legend:{display:false},tooltip:{callbacks:{title(){return''},label(ctx){const d=ctx.dataset.data[ctx.dataIndex];return words[d.x]+' · '+scenes[d.y]+': '+d.v}}}},
+scales:{x:{type:'category',labels:words,ticks:{color:'#64748b',font:{size:9},maxRotation:45},grid:{display:false}},y:{type:'category',labels:scenes,ticks:{color:'#64748b',font:{size:9}},grid:{display:false}}}
+}}
+)
+}
+
+function renderScatter(){
+const ctx=document.getElementById('scatterChart');if(!ctx)return;
+destroyChart('scatter');
+chartInstances.scatter=new Chart(ctx,{
+type:'scatter',
+data:{datasets:[{label:'账号数据',data:[{x:1,y:12},{x:1,y:18},{x:2,y:22},{x:2,y:28},{x:3,y:35},{x:3,y:42},{x:4,y:38},{x:4,y:45},{x:5,y:42},{x:5,y:48},{x:6,y:40},{x:6,y:52},{x:7,y:45},{x:7,y:50},{x:8,y:42},{x:8,y:48}],backgroundColor:'rgba(0,212,255,0.5)',borderColor:'#00d4ff',pointRadius:6}]},
+options:{
+responsive:true,maintainAspectRatio:false,
+plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'日更'+ctx.parsed.x+'条 · 涨粉'+ctx.parsed.y+'万'}}},
+scales:{x:{title:{display:true,text:'日更新频率（条）',color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:9},stepSize:1}},y:{title:{display:true,text:'周涨粉量（万）',color:'#64748b',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'#64748b',font:{size:9}},beginAtZero:true}}
+}}
+)
+}
+
+function renderNotes(){
+const area=document.getElementById('notesArea');
+if(state.notes.length===0){area.innerHTML='<textarea placeholder="记录本周踩坑、避雷建议…" id="notesTextarea"></textarea>'}
+else{area.innerHTML=state.notes.map(n=>'<div class="note-item"><span class="note-dot"></span><span>'+n+'</span><span style="margin-left:auto;cursor:pointer;color:var(--text-muted);font-size:.7rem;" onclick="deleteNote(\''+n.replace(/'/g,"\\'")+'\')">✕</span></div>').join('')+'<textarea placeholder="添加新的避雷记录…" id="notesTextarea" style="margin-top:8px;"></textarea>'}
+}
+
+function addNote(){const ta=document.getElementById('notesTextarea');const text=ta?ta.value.trim():'';if(!text)return;state.notes.push(text);saveState();renderNotes()}
+function deleteNote(text){state.notes=state.notes.filter(n=>n!==text);saveState();renderNotes()}
+
+// ===== MODAL =====
+function openQuickNote(){document.getElementById('quickNoteModal').classList.add('open')}
+function closeQuickNote(){document.getElementById('quickNoteModal').classList.remove('open')}
+function saveQuickNote(){
+const title=document.getElementById('modalTitle').value.trim();
+const formula=document.getElementById('modalFormula').value.trim()||title||'未命名选题';
+const score=parseInt(document.getElementById('modalScore').value);
+const note=document.getElementById('modalNote').value.trim();
+if(!formula&&!title)return;
+const emojis=['💎','⚔️','🌸','🌍','💕','🔍','👑','🤖','👔','🎭'];
+state.ideas.unshift({id:state.nextIdeaId++,formula:formula,score:score,status:'draft',created:new Date().toISOString().slice(0,10).replace(/-/g,'/'),thumb:emojis[Math.floor(Math.random()*emojis.length)]});
+if(note)state.notes.push('[灵感] '+note);
+saveState();closeQuickNote();
+if(currentPage==='ideas')renderIdeas();
+document.getElementById('ideaBadge').textContent=state.ideas.length
+}
+
+// ===== INIT =====
+document.addEventListener('DOMContentLoaded',function(){
+if(typeof lucide!=='undefined')lucide.createIcons();
+renderDashboard();
+// Filter bar
+document.querySelectorAll('.filter-bar').forEach(bar=>{
+bar.addEventListener('click',function(e){
+const btn=e.target.closest('.filter-btn');if(!btn)return;
+const isTime=btn.dataset.filter==='day'||btn.dataset.filter==='week'||btn.dataset.filter==='month';
+const isPlatform=btn.dataset.filter==='douyin'||btn.dataset.filter==='kuaishou'||btn.dataset.filter==='hongguo';
+if(isTime){bar.querySelectorAll('[data-filter]').forEach(b=>{if(b.dataset.filter==='day'||b.dataset.filter==='week'||b.dataset.filter==='month')b.classList.remove('active')});btn.classList.add('active')}
+else if(isPlatform){bar.querySelectorAll('[data-filter]').forEach(b=>{if(b.dataset.filter==='douyin'||b.dataset.filter==='kuaishou'||b.dataset.filter==='hongguo')b.classList.remove('active')});btn.classList.add('active')}
+})});
+// Modal overlay
+document.getElementById('quickNoteModal').addEventListener('click',function(e){if(e.target===this)closeQuickNote()});
+// Keyboard
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeQuickNote();if((e.key==='n')&&(e.ctrlKey||e.metaKey)){e.preventDefault();openQuickNote()}});
+// Resize debounce
+let rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(()=>{if(currentPage)renderPage(currentPage)},300)})
+});
+</script>
+</body>
+</html>
