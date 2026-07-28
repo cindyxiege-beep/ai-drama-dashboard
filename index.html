@@ -6,10 +6,6 @@
 <title>AI漫剧选题分析</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-<script src="https://unpkg.com/lucide@latest"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -161,7 +157,6 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
 .tooltip-trigger .tooltip-popup{position:absolute;bottom:calc(100% + 8px);left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--border-color);border-radius:var(--radius-sm);padding:10px 14px;font-size:.72rem;color:var(--text-secondary);white-space:nowrap;opacity:0;pointer-events:none;transition:opacity .15s;box-shadow:0 4px 16px rgba(0,0,0,0.12);z-index:50}
 .tooltip-trigger:hover .tooltip-popup{opacity:1}
 .table-scroll{overflow-x:auto}
-/* Insight / Strategy / Recommendation cards */
 .insight-content{font-size:.85rem;line-height:1.8;color:var(--text-secondary)}
 .insight-content strong{color:var(--text-primary)}
 .insight-item{padding:8px 0;border-bottom:1px solid var(--bg-secondary)}
@@ -171,12 +166,12 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
 .tag-red{background:var(--bg-secondary);color:var(--accent-red)}
 .tag-gray{background:var(--bg-secondary);color:var(--text-muted)}
 .strategy-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
-.strategy-card{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px}
+.strategy-card{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px;background:var(--bg-card);box-shadow:var(--shadow-card)}
 .strategy-card .sc-title{font-size:.78rem;font-weight:700;margin-bottom:10px;text-transform:uppercase;letter-spacing:.3px}
 .strategy-card .sc-item{font-size:.78rem;color:var(--text-secondary);padding:6px 0;border-bottom:1px solid var(--bg-secondary);line-height:1.5}
 .strategy-card .sc-item:last-child{border-bottom:none}
 .recommend-list{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.rec-card{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px}
+.rec-card{border:1px solid var(--border-color);border-radius:var(--radius-md);padding:16px;background:var(--bg-card);box-shadow:var(--shadow-card)}
 .rec-card .rec-priority{font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;margin-bottom:8px}
 .pri-p0{background:var(--text-primary);color:#fff}
 .pri-p1{background:var(--bg-secondary);color:var(--text-primary)}
@@ -214,13 +209,12 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
 <body>
 <div class="app-layout">
   <nav class="sidebar"><div class="sidebar-brand"><h1>选题分析</h1><small>AI漫剧驾驶舱</small></div>
-  <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg><span>驾驶舱总览</span></button>
-  <button class="nav-item" data-page="track" onclick="switchPage('track')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span>赛道风向标</span><span class="badge">8</span></button>
-  <button class="nav-item" data-page="ideas" onclick="switchPage('ideas')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>灵感选题库</span><span class="badge" id="ideaBadge">6</span></button>
-  <button class="nav-item" data-page="hotspot" onclick="switchPage('hotspot')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>今日弹药库</span></button>
-  <button class="nav-item" data-page="report" onclick="switchPage('report')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>周报分析室</span></button></nav>
+  <button class="nav-item active" data-page="dashboard" onclick="switchPage('dashboard')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg><span>驾驶舱总览</span></button>
+  <button class="nav-item" data-page="track" onclick="switchPage('track')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg><span>赛道风向标</span><span class="badge">8</span></button>
+  <button class="nav-item" data-page="ideas" onclick="switchPage('ideas')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg><span>灵感选题库</span><span class="badge" id="ideaBadge">6</span></button>
+  <button class="nav-item" data-page="hotspot" onclick="switchPage('hotspot')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg><span>今日弹药库</span></button>
+  <button class="nav-item" data-page="report" onclick="switchPage('report')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><span>周报分析室</span></button></nav>
   <main class="main-content" id="mainContent">
-    <!-- Dashboard -->
     <div class="page active" id="page-dashboard">
       <div class="kpi-row" id="kpiRow"></div>
       <div class="two-col">
@@ -230,7 +224,6 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
       <div class="full-row"><div class="card"><div class="card-header"><span class="card-title">近7天爆款题材分布趋势</span></div><div class="chart-container-lg"><canvas id="trendChart"></canvas></div></div></div>
       <div class="full-row"><div class="card"><div class="card-header"><span class="card-title">趋势解读</span></div><div class="insight-content" id="trendInsight"></div></div></div>
     </div>
-    <!-- Track -->
     <div class="page" id="page-track">
       <div class="filter-bar" id="trackFilters">
         <button class="filter-btn active" data-filter="day">今日</button><button class="filter-btn" data-filter="week">本周</button><button class="filter-btn" data-filter="month">本月</button>
@@ -241,19 +234,17 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
         <div class="card" style="padding:0;overflow:hidden;"><div class="table-scroll"><table class="data-table" id="trackTable"></table></div></div>
         <div class="card"><div class="card-header"><span class="card-title">赛道热度气泡图</span></div><div class="chart-container" style="height:400px;"><canvas id="bubbleChart"></canvas></div></div>
       </div>
-      <div class="full-row"><div class="card" style="padding:0;border:none;box-shadow:none;"><div class="strategy-grid" id="strategyGrid"></div></div></div>
+      <div class="full-row"><div class="strategy-grid" id="strategyGrid"></div></div>
     </div>
-    <!-- Ideas -->
     <div class="page" id="page-ideas">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap;">
-        <button class="btn-primary" onclick="grabHotIdeas()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>一键抓取热点</span></button>
-        <div class="search-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="搜索关键词或情绪词…" id="ideaSearch" oninput="filterIdeas()"></div>
+        <button class="btn-primary" onclick="grabHotIdeas()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg><span>一键抓取热点</span></button>
+        <div class="search-box"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" placeholder="搜索关键词或情绪词…" id="ideaSearch" oninput="filterIdeas()"></div>
         <span style="font-size:.72rem;color:var(--text-muted);margin-left:auto;" id="ideaCount"></span>
       </div>
       <div class="idea-list" id="ideaList"></div>
       <div class="full-row" style="margin-top:20px;"><div class="card"><div class="card-header"><span class="card-title">优化选题推荐</span></div><div class="recommend-list" id="recommendList"></div></div></div>
     </div>
-    <!-- Hotspot -->
     <div class="page" id="page-hotspot">
       <div class="hotspot-header"><span class="section-title" style="margin-bottom:0;">今日热点雷达图</span><span class="date-badge" id="todayBadge"></span></div>
       <div class="two-col-narrow">
@@ -262,7 +253,6 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
       </div>
       <div class="full-row"><div class="card"><div class="card-header"><span class="card-title">借势建议区</span></div><div id="suggestionArea"></div></div></div>
     </div>
-    <!-- Report -->
     <div class="page" id="page-report">
       <div class="compare-row" id="compareRow"></div>
       <div class="two-col">
@@ -274,7 +264,7 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
     </div>
   </main>
 </div>
-<button class="fab" onclick="openQuickNote()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
+<button class="fab" onclick="openQuickNote()"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></button>
 <div class="modal-overlay" id="quickNoteModal">
   <div class="modal-box">
     <h3>快速记录灵感</h3>
@@ -291,8 +281,41 @@ border:none;background:none;width:calc(100% - 20px);text-align:left
   </div>
 </div>
 <script>
-const STORAGE_KEY='ai_drama_dashboard';
-let state=loadState();let chartInstances={};let currentPage='dashboard';let trackSort={col:'rate',asc:false};
+// Load CDN scripts asynchronously
+var deps=[
+['C','https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js'],
+['M','https://cdn.jsdelivr.net/npm/chartjs-chart-matrix@2.0.1/dist/chartjs-chart-matrix.min.js'],
+['S','https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js'],
+['L','https://unpkg.com/lucide@latest']
+];
+var loadedCount=0;
+function bootApp(){
+var S='lucide';if(typeof window[S]!=='undefined')window[S].createIcons();
+renderDashboard();
+document.querySelectorAll('.filter-bar').forEach(function(b){b.addEventListener('click',function(e){
+var btn=e.target.closest('.filter-btn');if(!btn)return;
+var t=btn.dataset.filter;
+var grp=(t==='day'||t==='week'||t==='month')?['day','week','month']:['douyin','kuaishou','hongguo'];
+b.querySelectorAll('.filter-btn').forEach(function(x){if(grp.indexOf(x.dataset.filter)>=0)x.classList.remove('active')});
+btn.classList.add('active')
+})});
+document.getElementById('quickNoteModal').addEventListener('click',function(e){if(e.target===this)closeQuickNote()});
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeQuickNote();if((e.key==='n')&&(e.ctrlKey||e.metaKey)){e.preventDefault();openQuickNote()}});
+var rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(function(){if(currentPage)renderPage(currentPage)},300)})
+}
+// Load scripts in order: Chart.js first, then others
+function loadNext(i){if(i>=deps.length){bootApp();return}
+var s=document.createElement('script');s.src=deps[i][1];
+s.onload=function(){loadNext(i+1)};
+s.onerror=function(){loadNext(i+1)};
+document.body.appendChild(s)
+}
+loadNext(0);
+</script>
+<script>
+// ===== Data / State =====
+var STORAGE_KEY='ai_drama_dashboard';
+var state=loadState();var chartInstances={};var currentPage='dashboard';var trackSort={col:'rate',asc:false};
 function getDefaultState(){return{
 ideas:[
 {id:1,formula:'豪门恩怨 + 失忆梗 + 反转打脸',score:8.5,status:'draft',created:'2026-07-25'},
@@ -305,42 +328,42 @@ ideas:[
 notes:['本周不要用慢节奏BGM，完播率下跌5%','女频题材在20:00-22:00发布，完播率提升12%','开场前3秒加入悬念对话，跳出率降低30%'],
 nextIdeaId:7
 }}
-function loadState(){try{const r=localStorage.getItem(STORAGE_KEY);if(r)return JSON.parse(r)}catch(e){}return getDefaultState()}
+function loadState(){try{var r=localStorage.getItem(STORAGE_KEY);if(r)return JSON.parse(r)}catch(e){}return getDefaultState()}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
 function switchPage(page){
-document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active')});
 document.getElementById('page-'+page).classList.add('active');
 document.querySelector('.nav-item[data-page="'+page+'"]').classList.add('active');
-currentPage=page;renderPage(page);if(typeof lucide!=='undefined')lucide.createIcons();
+currentPage=page;renderPage(page)
 }
 function renderPage(page){switch(page){case'dashboard':renderDashboard();break;case'track':renderTrack();break;case'ideas':renderIdeas();break;case'hotspot':renderHotspot();break;case'report':renderReport();break}}
 function destroyChart(k){if(chartInstances[k]){chartInstances[k].destroy();delete chartInstances[k]}}
 // ===== Dashboard =====
 function renderDashboard(){renderKPI();renderHotTags();renderCoverWall();renderTrendChart();renderTrendInsight()}
 function renderKPI(){
-const kpis=[
+var kpis=[
 {label:'今日全网AI漫剧热点指数',v:'87.6',u:'',ch:'+2.3%',up:true},
 {label:'待跟进的爆款选题',v:'12',u:'个',ch:'+3 vs 昨日',up:true},
 {label:'本周追踪账号涨粉均值',v:'3.2',u:'万',ch:'+15.2%',up:true},
 {label:'我的内容排期（今日待发布）',v:'5',u:'条',ch:'vs 昨日 -2',up:false}];
-document.getElementById('kpiRow').innerHTML=kpis.map(k=>'<div class="kpi-card"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.v+'<span style="font-size:.7rem;font-weight:500;color:var(--text-muted);margin-left:2px;">'+k.u+'</span></div><div class="kpi-change '+(k.up?'up':'down')+'">'+(k.up?'↑ ':'↓ ')+k.ch+'</div></div>').join('')
+document.getElementById('kpiRow').innerHTML=kpis.map(function(k){return'<div class="kpi-card"><div class="kpi-label">'+k.label+'</div><div class="kpi-value">'+k.v+'<span style="font-size:.7rem;font-weight:500;color:var(--text-muted);margin-left:2px;">'+k.u+'</span></div><div class="kpi-change '+(k.up?'up':'down')+'">'+(k.up?'↑ ':'↓ ')+k.ch+'</div></div>'}).join('')
 }
 function renderHotTags(){
-const tags=['#AI漫剧·总裁','#古风虐恋·替身','#重生逆袭·打脸','#末世机甲·异能','#豪门恩怨·反转','#悬疑轮回·烧脑','#甜宠日常·先婚后爱','#赘婿龙王·觉醒'];
-document.getElementById('hotTags').innerHTML=tags.map(t=>'<span class="tag tag-lg">'+t+'</span>').join('')
+var tags=['#AI漫剧·总裁','#古风虐恋·替身','#重生逆袭·打脸','#末世机甲·异能','#豪门恩怨·反转','#悬疑轮回·烧脑','#甜宠日常·先婚后爱','#赘婿龙王·觉醒'];
+document.getElementById('hotTags').innerHTML=tags.map(function(t){return'<span class="tag tag-lg">'+t+'</span>'}).join('')
 }
 function renderCoverWall(){
-const covers=[
+var covers=[
 {bg:'linear-gradient(135deg,#e8e8e8,#ccc)',label:'重生之顶级豪门',rate:'92%',likes:'1:3.2'},
 {bg:'linear-gradient(135deg,#ddd,#bbb)',label:'机甲战神的宠妻',rate:'88%',likes:'1:2.8'},
 {bg:'linear-gradient(135deg,#e0e0e0,#aaa)',label:'替身新娘逆袭',rate:'95%',likes:'1:4.1'},
 {bg:'linear-gradient(135deg,#d8d8d8,#999)',label:'末世之我是女王',rate:'85%',likes:'1:2.5'},
 {bg:'linear-gradient(135deg,#e5e5e5,#b0b0b0)',label:'龙王归来娶我',rate:'90%',likes:'1:3.6'}];
-document.getElementById('coverWall').innerHTML=covers.map(c=>'<div class="cover-item" style="background:'+c.bg+';"><div style="position:absolute;top:6px;left:6px;font-size:.55rem;color:#777;font-weight:600;background:rgba(255,255,255,0.85);padding:2px 6px;border-radius:4px;">漫剧</div><div style="position:absolute;bottom:6px;left:6px;right:6px;font-size:.6rem;color:#333;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.label+'</div><div class="cover-overlay"><span>完播率 <span class="stat">'+c.rate+'</span></span><span>点赞比 <span class="stat">'+c.likes+'</span></span></div></div>').join('')
+document.getElementById('coverWall').innerHTML=covers.map(function(c){return'<div class="cover-item" style="background:'+c.bg+';"><div style="position:absolute;top:6px;left:6px;font-size:.55rem;color:#777;font-weight:600;background:rgba(255,255,255,0.85);padding:2px 6px;border-radius:4px;">漫剧</div><div style="position:absolute;bottom:6px;left:6px;right:6px;font-size:.6rem;color:#333;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+c.label+'</div><div class="cover-overlay"><span>完播率 <span class="stat">'+c.rate+'</span></span><span>点赞比 <span class="stat">'+c.likes+'</span></span></div></div>'}).join('')
 }
 function renderTrendChart(){
-const ctx=document.getElementById('trendChart');if(!ctx)return;destroyChart('trend');
+var ctx=document.getElementById('trendChart');if(!ctx)return;destroyChart('trend');
 chartInstances.trend=new Chart(ctx,{type:'line',data:{labels:['7/22','7/23','7/24','7/25','7/26','7/27','7/28'],datasets:[
 {label:'女频',data:[65,72,78,85,82,88,92],borderColor:'#000',backgroundColor:'rgba(0,0,0,0.04)',fill:true,tension:.4,pointRadius:3},
 {label:'男频',data:[55,58,62,70,75,78,82],borderColor:'#555',backgroundColor:'rgba(85,85,85,0.04)',fill:true,tension:.4,pointRadius:3},
@@ -366,64 +389,62 @@ function getTrackData(){return[
 {name:'甜宠日常',active:165,rate:'7.4%',avgFans:'36.2万',comp:6.1,supply:165,engagement:55,total:5100},
 {name:'豪门商战',active:88,rate:'13.2%',avgFans:'55.8万',comp:8.2,supply:88,engagement:98,total:4500}]}
 function renderTrackTable(){
-const data=getTrackData();const sorted=[...data].sort((a,b)=>{let va=a[trackSort.col],vb=b[trackSort.col];if(typeof va==='string'){va=parseFloat(va.replace(/[^.0-9]/g,''))||0;vb=parseFloat(vb.replace(/[^.0-9]/g,''))||0}return trackSort.asc?va-vb:vb-va});
-const cols=[{key:'name',label:'赛道名称'},{key:'active',label:'在播数量'},{key:'rate',label:'爆款率'},{key:'avgFans',label:'头部账号平均粉丝'},{key:'comp',label:'竞争力评分'}];
-document.getElementById('trackTable').innerHTML='<thead><tr>'+cols.map(c=>'<th onclick="sortTrack(\''+c.key+'\')">'+c.label+'<span class="sort-icon">'+(trackSort.col===c.key?(trackSort.asc?'▲':'▼'):'⇅')+'</span></th>').join('')+'</tr></thead><tbody>'+sorted.map(d=>'<tr><td>'+d.name+'</td><td>'+d.active+'</td><td style="color:'+(parseFloat(d.rate)>12?'var(--accent-green)':'var(--text-secondary)')+'">'+d.rate+'</td><td>'+d.avgFans+'</td><td><span class="score-bar" style="width:'+(d.comp*8)+'px"></span>'+d.comp+'/10</td></tr>').join('')+'</tbody>'
+var data=getTrackData();var sorted=[].concat(data).sort(function(a,b){var va=a[trackSort.col],vb=b[trackSort.col];if(typeof va==='string'){va=parseFloat(va.replace(/[^.0-9]/g,''))||0;vb=parseFloat(vb.replace(/[^.0-9]/g,''))||0}return trackSort.asc?va-vb:vb-va});
+var cols=[{key:'name',label:'赛道名称'},{key:'active',label:'在播数量'},{key:'rate',label:'爆款率'},{key:'avgFans',label:'头部账号平均粉丝'},{key:'comp',label:'竞争力评分'}];
+document.getElementById('trackTable').innerHTML='<thead><tr>'+cols.map(function(c){return'<th onclick="sortTrack(\''+c.key+'\')">'+c.label+'<span class="sort-icon">'+(trackSort.col===c.key?(trackSort.asc?'▲':'▼'):'⇅')+'</span></th>'}).join('')+'</tr></thead><tbody>'+sorted.map(function(d){return'<tr><td>'+d.name+'</td><td>'+d.active+'</td><td style="color:'+(parseFloat(d.rate)>12?'var(--accent-green)':'var(--text-secondary)')+'">'+d.rate+'</td><td>'+d.avgFans+'</td><td><span class="score-bar" style="width:'+(d.comp*8)+'px"></span>'+d.comp+'/10</td></tr>'}).join('')+'</tbody>'
 }
 function sortTrack(col){if(trackSort.col===col)trackSort.asc=!trackSort.asc;else{trackSort.col=col;trackSort.asc=false}renderTrackTable()}
 function renderBubbleChart(){
-const ctx=document.getElementById('bubbleChart');if(!ctx)return;destroyChart('bubble');
-const data=getTrackData();const colors=['#333','#555','#777','#999','#bbb','#444','#666','#888'];
-chartInstances.bubble=new Chart(ctx,{
-type:'bubble',data:{datasets:data.map((d,i)=>({label:d.name,data:[{x:d.supply,y:d.engagement,r:Math.sqrt(d.total)*.4}],backgroundColor:colors[i]+'44',borderColor:colors[i],borderWidth:1.5}))},
-options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#888',font:{size:10},padding:10,boxWidth:10}},tooltip:{callbacks:{label:ctx=>ctx.dataset.label+' 供给'+ctx.parsed.x+' 互动'+ctx.parsed.y}}},scales:{x:{title:{display:true,text:'供给量（在播数量）',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9}}},y:{title:{display:true,text:'平均互动量',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9}}}}})
+var ctx=document.getElementById('bubbleChart');if(!ctx)return;destroyChart('bubble');
+var data=getTrackData();var colors=['#333','#555','#777','#999','#bbb','#444','#666','#888'];
+chartInstances.bubble=new Chart(ctx,{type:'bubble',data:{datasets:data.map(function(d,i){return{label:d.name,data:[{x:d.supply,y:d.engagement,r:Math.sqrt(d.total)*.4}],backgroundColor:colors[i]+'44',borderColor:colors[i],borderWidth:1.5}})},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#888',font:{size:10},padding:10,boxWidth:10}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+' 供给'+ctx.parsed.x+' 互动'+ctx.parsed.y}}}},scales:{x:{title:{display:true,text:'供给量（在播数量）',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9}}},y:{title:{display:true,text:'平均互动量',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9}}}}}})
 }
 function renderStrategy(){
 document.getElementById('strategyGrid').innerHTML=
 '<div class="strategy-card"><div class="sc-title" style="color:var(--accent-red);">红海警告</div><div class="sc-item"><strong>甜宠日常</strong>：在播165部，供给最拥挤，爆款率仅7.4%，建议减少投入。</div><div class="sc-item"><strong>重生逆袭</strong>：在播208部为最多，同质化严重，除非有独特切入点否则不推荐。</div></div>'+
 '<div class="strategy-card"><div class="sc-title" style="color:var(--accent-green);">蓝海机会</div><div class="sc-item"><strong>末世科幻</strong>：在播仅72部，爆款率18.1%为最高，强烈推荐入场。</div><div class="sc-item"><strong>悬疑烧脑</strong>：在播98部，爆款率15.6%，互动量高，适合深度内容。</div><div class="sc-item"><strong>豪门商战</strong>：在播88部，爆款率13.2%，适合精品化运作。</div></div>'+
-'<div class="strategy-card"><div class="sc-title" style="color:var(--accent-dark);">下一步行动</div><div class="sc-item">本周优先制作 <strong>1条末世科幻</strong> 选题，作为首发蓝海测试。</div><div class="sc-item">悬疑赛道可制作 <strong>「AI+悬疑」跨界</strong> 内容，利用技术热点引流。</div><div class="sc-item">古风仙侠走 <strong>混搭路线</strong> 避开同质化，成本可控。</div></div>'
+'<div class="strategy-card"><div class="sc-title" style="color:#333;">下一步行动</div><div class="sc-item">本周优先制作 <strong>1条末世科幻</strong> 选题，作为首发蓝海测试。</div><div class="sc-item">悬疑赛道可制作 <strong>「AI+悬疑」跨界</strong> 内容，利用技术热点引流。</div><div class="sc-item">古风仙侠走 <strong>混搭路线</strong> 避开同质化，成本可控。</div></div>'
 }
 // ===== Ideas =====
 function renderIdeas(){
-const list=document.getElementById('ideaList');const ideas=state.ideas;if(!list)return;
-list.innerHTML=ideas.map(d=>'<div class="idea-card" data-id="'+d.id+'"><div class="drag-handle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg></div><div class="idea-thumb">'+(d.thumb||'💡')+'</div><div class="idea-body"><div class="formula tooltip-trigger">'+d.formula.split('+').map(s=>'<span class="hl">'+s.trim()+'</span>').join(' + ')+'<div class="tooltip-popup">黄金3秒脚本：<br>「'+d.formula.split('+').map(s=>s.trim()).slice(0,2).join('，')+'」<br>开场即高潮</div></div><div class="meta">创建于 '+d.created+'</div></div><div class="idea-right"><span class="idea-status '+(d.status==='draft'?'status-draft':d.status==='making'?'status-making':'status-published')+'">'+(d.status==='draft'?'待写剧本':d.status==='making'?'制作中':'已发布')+'</span><span class="idea-score">'+d.score+'/10</span></div></div>').join('');
+var list=document.getElementById('ideaList');var ideas=state.ideas;if(!list)return;
+list.innerHTML=ideas.map(function(d){return'<div class="idea-card" data-id="'+d.id+'"><div class="drag-handle"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="5" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="9" cy="12" r="1"/><circle cx="15" cy="12" r="1"/><circle cx="9" cy="19" r="1"/><circle cx="15" cy="19" r="1"/></svg></div><div class="idea-thumb">'+(d.thumb||'💡')+'</div><div class="idea-body"><div class="formula tooltip-trigger">'+d.formula.split('+').map(function(s){return'<span class="hl">'+s.trim()+'</span>'}).join(' + ')+'<div class="tooltip-popup">黄金3秒脚本：<br>「'+d.formula.split('+').map(function(s){return s.trim()}).slice(0,2).join('，')+'」<br>开场即高潮</div></div><div class="meta">创建于 '+d.created+'</div></div><div class="idea-right"><span class="idea-status '+(d.status==='draft'?'status-draft':d.status==='making'?'status-making':'status-published')+'">'+(d.status==='draft'?'待写剧本':d.status==='making'?'制作中':'已发布')+'</span><span class="idea-score">'+d.score+'/10</span></div></div>'}).join('');
 document.getElementById('ideaCount').textContent='共 '+ideas.length+' 条选题';
 if(window.ideaSortable)window.ideaSortable.destroy();
-window.ideaSortable=new Sortable(list,{handle:'.drag-handle',animation:200,ghostClass:'sortable-chosen',onEnd:function(){const items=[...list.querySelectorAll('.idea-card')];state.ideas=items.map(el=>state.ideas.find(i=>i.id==el.dataset.id));saveState()}});
+window.ideaSortable=new Sortable(list,{handle:'.drag-handle',animation:200,ghostClass:'sortable-chosen',onEnd:function(){var items=[].slice.call(list.querySelectorAll('.idea-card'));state.ideas=items.map(function(el){return state.ideas.find(function(i){return i.id==el.dataset.id})});saveState()}});
 renderRecommendations()
 }
-function filterIdeas(){const q=document.getElementById('ideaSearch').value.trim().toLowerCase();document.querySelectorAll('.idea-card').forEach(c=>{c.style.display=q&&!c.textContent.toLowerCase().includes(q)?'none':'flex'})}
+function filterIdeas(){var q=document.getElementById('ideaSearch').value.trim().toLowerCase();document.querySelectorAll('.idea-card').forEach(function(c){c.style.display=q&&c.textContent.toLowerCase().indexOf(q)<0?'none':'flex'})}
 function grabHotIdeas(){
-const ns=[{formula:'AI穿越 + 古代权谋 + 现代科技',score:8.7},{formula:'末世女王 + 废柴逆袭 + 忠犬守护',score:8.3},{formula:'双面总裁 + 带球跑 + 追妻火葬场',score:7.9}];
-ns.forEach(n=>{state.ideas.unshift({id:state.nextIdeaId++,formula:n.formula,score:n.score,status:'draft',created:new Date().toISOString().slice(0,10).replace(/-/g,'/')})});
+var ns=[{formula:'AI穿越 + 古代权谋 + 现代科技',score:8.7},{formula:'末世女王 + 废柴逆袭 + 忠犬守护',score:8.3},{formula:'双面总裁 + 带球跑 + 追妻火葬场',score:7.9}];
+ns.forEach(function(n){state.ideas.unshift({id:state.nextIdeaId++,formula:n.formula,score:n.score,status:'draft',created:new Date().toISOString().slice(0,10).replace(/-/g,'/')})});
 saveState();renderIdeas();document.getElementById('ideaBadge').textContent=state.ideas.length
 }
 function renderRecommendations(){
-const recs=[
+var recs=[
 {priority:'P0',title:'末世女王 x AI觉醒',reason:'末世赛道爆款率18.1%，AI话题当前热度95，跨界融合能最大化流量红利。建议开场用AI觉醒特效抓眼球。'},
 {priority:'P0',title:'悬疑轮回 x 总裁身份',reason:'悬疑赛道互动量高（105），结合豪门总裁人设，覆盖两类受众。推荐用「双重身份」作为核心钩子。'},
 {priority:'P1',title:'古风虐恋 x 替身前妻',reason:'古风赛道稳定但竞争大，「替身」词频近期飙升，蹭热点同时走差异化。建议强情绪输出。'},
 {priority:'P1',title:'豪门商战 x 逆袭打脸',reason:'豪门赛道爆款率13.2%，适合精品化制作。「龙王觉醒」词频高，可与商战元素结合。'},
 ];
-document.getElementById('recommendList').innerHTML=recs.map(r=>'<div class="rec-card"><span class="rec-priority '+(r.priority==='P0'?'pri-p0':'pri-p1')+'">'+r.priority+'</span><div class="rec-title">'+r.title+'</div><div class="rec-reason">'+r.reason+'</div></div>').join('')
+document.getElementById('recommendList').innerHTML=recs.map(function(r){return'<div class="rec-card"><span class="rec-priority '+(r.priority==='P0'?'pri-p0':'pri-p1')+'">'+r.priority+'</span><div class="rec-title">'+r.title+'</div><div class="rec-reason">'+r.reason+'</div></div>'}).join('')
 }
 // ===== Hotspot =====
-function renderHotspot(){const n=new Date();document.getElementById('todayBadge').textContent=n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日';renderRadarChart();renderWordCloud();renderSuggestions()}
+function renderHotspot(){var n=new Date();document.getElementById('todayBadge').textContent=n.getFullYear()+'年'+(n.getMonth()+1)+'月'+n.getDate()+'日';renderRadarChart();renderWordCloud();renderSuggestions()}
 function renderRadarChart(){
-const ctx=document.getElementById('radarChart');if(!ctx)return;destroyChart('radar');
+var ctx=document.getElementById('radarChart');if(!ctx)return;destroyChart('radar');
 chartInstances.radar=new Chart(ctx,{type:'radar',data:{labels:['AI漫剧','重生逆袭','甜宠','悬疑','古风','末世','豪门'],datasets:[{label:'热度指数',data:[95,88,72,85,78,65,82],backgroundColor:'rgba(0,0,0,0.06)',borderColor:'#000',pointBackgroundColor:'#000',pointBorderColor:'#fff',pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{r:{grid:{color:'rgba(0,0,0,0.06)'},angleLines:{color:'rgba(0,0,0,0.06)'},pointLabels:{color:'#888',font:{size:10}},ticks:{color:'#888',backdropColor:'transparent',font:{size:9}},min:0,max:100}}}})
 }
 function renderWordCloud(){
-const ws=[{text:'AI漫剧',w:95},{text:'重生',w:88},{text:'逆袭',w:82},{text:'总裁',w:78},{text:'虐恋',w:75},{text:'末世',w:70},{text:'机甲',w:68},{text:'古风',w:65},{text:'甜宠',w:62},{text:'豪门',w:60},{text:'悬疑',w:58},{text:'替身',w:55},{text:'龙王',w:52},{text:'觉醒',w:50},{text:'先婚后爱',w:48},{text:'商战',w:45}];
-document.getElementById('hotWordCloud').innerHTML=ws.map(w=>{const s=.7+(w.w/100)*1.1;return'<span class="wc-item" style="font-size:'+s.toFixed(2)+'rem;color:#555;font-weight:'+(w.w>70?700:500)+';">'+w.text+'</span>'}).join('')
+var ws=[{text:'AI漫剧',w:95},{text:'重生',w:88},{text:'逆袭',w:82},{text:'总裁',w:78},{text:'虐恋',w:75},{text:'末世',w:70},{text:'机甲',w:68},{text:'古风',w:65},{text:'甜宠',w:62},{text:'豪门',w:60},{text:'悬疑',w:58},{text:'替身',w:55},{text:'龙王',w:52},{text:'觉醒',w:50},{text:'先婚后爱',w:48},{text:'商战',w:45}];
+document.getElementById('hotWordCloud').innerHTML=ws.map(function(w){var s=.7+(w.w/100)*1.1;return'<span class="wc-item" style="font-size:'+s.toFixed(2)+'rem;color:#555;font-weight:'+(w.w>70?700:500)+';">'+w.text+'</span>'}).join('')
 }
 function renderSuggestions(){
-const ss=[
+var ss=[
 {label:'Top 1 热点',text:'热点 <strong>「AI漫剧·总裁」</strong> 建议改编为 <strong>「豪门恩怨+AI换脸+反转打脸」</strong> 风格，参考对标账号 <strong>@AI短剧工厂</strong>。'},
 {label:'Top 2 热点',text:'热点 <strong>「重生逆袭·机甲」</strong> 建议改编为 <strong>「末世+机甲+兄弟反目」</strong> 风格，参考对标账号 <strong>@机甲宇宙</strong> 的快节奏剪辑。'},
 {label:'Top 3 热点',text:'热点 <strong>「古风虐恋·替身」</strong> 建议改编为 <strong>「替身文学+追妻火葬场」</strong> 风格，参考对标账号 <strong>@古风小剧场</strong>。'}];
-document.getElementById('suggestionArea').innerHTML=ss.map(s=>'<div class="suggestion-card"><div class="hot-label">'+s.label+'</div><div class="suggestion-text">'+s.text+'</div></div>').join('')
+document.getElementById('suggestionArea').innerHTML=ss.map(function(s){return'<div class="suggestion-card"><div class="hot-label">'+s.label+'</div><div class="suggestion-text">'+s.text+'</div></div>'}).join('')
 }
 // ===== Report =====
 function renderReport(){renderCompare();renderHeatmap();renderScatter();renderNotes();renderStrategy_next()}
@@ -433,24 +454,24 @@ document.getElementById('compareRow').innerHTML=
 '<div class="compare-card"><div class="cmp-icon down"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div><div><div class="cmp-label">本周平均完播率</div><div class="cmp-value">34.2%</div><div class="cmp-delta down">↓ -2.1% vs 上周</div></div></div>'
 }
 function renderHeatmap(){
-const ctx=document.getElementById('heatmapChart');if(!ctx)return;destroyChart('heatmap');
-const words=['离婚协议','龙王觉醒','重生','替身','逆袭','机甲','虐恋','豪门','甜宠','悬疑'];
-const scenes=['开场3秒','中段高潮','结尾反转'];
-const vals=[[95,72,88,65,58,42,78,85,32,45],[55,88,68,72,82,65,52,48,58,62],[72,52,92,78,68,48,85,62,35,88]];
-const data=[];vals.forEach((row,yi)=>{row.forEach((v,xi)=>{data.push({x:xi,y:yi,v})})});
-chartInstances.heatmap=new Chart(ctx,{type:'matrix',data:{datasets:[{label:'词频',data,backgroundColor(ctx){const v=ctx.dataset.data[ctx.dataIndex].v;const a=v/100;return'rgba(0,0,0,'+(a*.6+.05)+')'},borderColor:'rgba(0,0,0,0.04)',borderWidth:1,width(ctx){const w=ctx.chart.chartArea?.width??300;return(w-10)/10-1},height(ctx){const h=ctx.chart.chartArea?.height??200;return(h-10)/3-1}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title(){return''},label(ctx){const d=ctx.dataset.data[ctx.dataIndex];return words[d.x]+' · '+scenes[d.y]+': '+d.v}}}},scales:{x:{type:'category',labels:words,ticks:{color:'#888',font:{size:9},maxRotation:45},grid:{display:false}},y:{type:'category',labels:scenes,ticks:{color:'#888',font:{size:9}},grid:{display:false}}}}})
+var ctx=document.getElementById('heatmapChart');if(!ctx)return;destroyChart('heatmap');
+var words=['离婚协议','龙王觉醒','重生','替身','逆袭','机甲','虐恋','豪门','甜宠','悬疑'];
+var scenes=['开场3秒','中段高潮','结尾反转'];
+var vals=[[95,72,88,65,58,42,78,85,32,45],[55,88,68,72,82,65,52,48,58,62],[72,52,92,78,68,48,85,62,35,88]];
+var data=[];vals.forEach(function(row,yi){row.forEach(function(v,xi){data.push({x:xi,y:yi,v:v})})});
+chartInstances.heatmap=new Chart(ctx,{type:'matrix',data:{datasets:[{label:'词频',data:data,backgroundColor:function(ctx){var v=ctx.dataset.data[ctx.dataIndex].v;var a=v/100;return'rgba(0,0,0,'+(a*.6+.05)+')'},borderColor:'rgba(0,0,0,0.04)',borderWidth:1,width:function(ctx){var w=ctx.chart.chartArea?ctx.chart.chartArea.width:300;return(w-10)/10-1},height:function(ctx){var h=ctx.chart.chartArea?ctx.chart.chartArea.height:200;return(h-10)/3-1}}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{title:function(){return''},label:function(ctx){var d=ctx.dataset.data[ctx.dataIndex];return words[d.x]+' · '+scenes[d.y]+': '+d.v}}}},scales:{x:{type:'category',labels:words,ticks:{color:'#888',font:{size:9},maxRotation:45},grid:{display:false}},y:{type:'category',labels:scenes,ticks:{color:'#888',font:{size:9}},grid:{display:false}}}}})
 }
 function renderScatter(){
-const ctx=document.getElementById('scatterChart');if(!ctx)return;destroyChart('scatter');
-chartInstances.scatter=new Chart(ctx,{type:'scatter',data:{datasets:[{label:'账号数据',data:[{x:1,y:12},{x:1,y:18},{x:2,y:22},{x:2,y:28},{x:3,y:35},{x:3,y:42},{x:4,y:38},{x:4,y:45},{x:5,y:42},{x:5,y:48},{x:6,y:40},{x:6,y:52},{x:7,y:45},{x:7,y:50},{x:8,y:42},{x:8,y:48}],backgroundColor:'rgba(0,0,0,0.3)',borderColor:'#000',pointRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>'日更'+ctx.parsed.x+'条 · 涨粉'+ctx.parsed.y+'万'}}},scales:{x:{title:{display:true,text:'日更新频率（条）',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9},stepSize:1}},y:{title:{display:true,text:'周涨粉量（万）',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9}},beginAtZero:true}}}})
+var ctx=document.getElementById('scatterChart');if(!ctx)return;destroyChart('scatter');
+chartInstances.scatter=new Chart(ctx,{type:'scatter',data:{datasets:[{label:'账号数据',data:[{x:1,y:12},{x:1,y:18},{x:2,y:22},{x:2,y:28},{x:3,y:35},{x:3,y:42},{x:4,y:38},{x:4,y:45},{x:5,y:42},{x:5,y:48},{x:6,y:40},{x:6,y:52},{x:7,y:45},{x:7,y:50},{x:8,y:42},{x:8,y:48}],backgroundColor:'rgba(0,0,0,0.3)',borderColor:'#000',pointRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return'日更'+ctx.parsed.x+'条 · 涨粉'+ctx.parsed.y+'万'}}}},scales:{x:{title:{display:true,text:'日更新频率（条）',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9},stepSize:1}},y:{title:{display:true,text:'周涨粉量（万）',color:'#888',font:{size:10}},grid:{color:'rgba(0,0,0,0.04)'},ticks:{color:'#888',font:{size:9}},beginAtZero:true}}}})
 }
 function renderNotes(){
-const area=document.getElementById('notesArea');
+var area=document.getElementById('notesArea');
 if(state.notes.length===0){area.innerHTML='<textarea placeholder="记录本周踩坑、避雷建议…" id="notesTextarea"></textarea>'}
-else{area.innerHTML=state.notes.map(n=>'<div class="note-item"><span class="note-dot"></span><span>'+n+'</span><span style="margin-left:auto;cursor:pointer;color:var(--text-muted);font-size:.7rem;" onclick="deleteNote(\''+n.replace(/'/g,"\\'")+'\')">✕</span></div>').join('')+'<textarea placeholder="添加新的避雷记录…" id="notesTextarea" style="margin-top:8px;"></textarea>'}
+else{area.innerHTML=state.notes.map(function(n){return'<div class="note-item"><span class="note-dot"></span><span>'+n+'</span><span style="margin-left:auto;cursor:pointer;color:var(--text-muted);font-size:.7rem;" onclick="deleteNote(\''+n.replace(/'/g,"\\'")+'\')">✕</span></div>'}).join('')+'<textarea placeholder="添加新的避雷记录…" id="notesTextarea" style="margin-top:8px;"></textarea>'}
 }
-function addNote(){const ta=document.getElementById('notesTextarea');const text=ta?ta.value.trim():'';if(!text)return;state.notes.push(text);saveState();renderNotes()}
-function deleteNote(text){state.notes=state.notes.filter(n=>n!==text);saveState();renderNotes()}
+function addNote(){var ta=document.getElementById('notesTextarea');var text=ta?ta.value.trim():'';if(!text)return;state.notes.push(text);saveState();renderNotes()}
+function deleteNote(text){state.notes=state.notes.filter(function(n){return n!==text});saveState();renderNotes()}
 function renderStrategy_next(){
 document.getElementById('strategyContent').innerHTML=
 '<div class="strategy-section"><div class="ss-title">内容方向</div><div class="ss-item"><strong>末世科幻优先</strong>：蓝海赛道热度持续上升，本周制作1条末世x机甲选题做测试。</div><div class="ss-item"><strong>悬疑持续投入</strong>：词频热力图显示「悬疑」「反转」在结尾场景出现率高，适合深度内容。</div></div>'+
@@ -458,26 +479,18 @@ document.getElementById('strategyContent').innerHTML=
 '<div class="strategy-section"><div class="ss-title">发布时间</div><div class="ss-item"><strong>女频题材</strong>优先安排在 20:00-22:00 发布，完播率提升12%。</div><div class="ss-item"><strong>男频/悬疑题材</strong>适合 12:00-14:00 午间时段投放。</div></div>'
 }
 // ===== Modal =====
-function openQuickNote(){document.getElementById('quickNoteModal').classList.add('open');const now=new Date();['modalTitle','modalFormula','modalScore','modalNote'].forEach(id=>{const el=document.getElementById(id);if(el&&id!=='modalScore')el.value=''});document.getElementById('modalScore').value='8'}
+function openQuickNote(){document.getElementById('quickNoteModal').classList.add('open')}
 function closeQuickNote(){document.getElementById('quickNoteModal').classList.remove('open')}
 function saveQuickNote(){
-const title=document.getElementById('modalTitle').value.trim();
-const formula=document.getElementById('modalFormula').value.trim()||title||'未命名选题';
-const score=parseInt(document.getElementById('modalScore').value);
-const note=document.getElementById('modalNote').value.trim();
+var title=document.getElementById('modalTitle').value.trim();
+var formula=document.getElementById('modalFormula').value.trim()||title||'未命名选题';
+var score=parseInt(document.getElementById('modalScore').value);
+var note=document.getElementById('modalNote').value.trim();
 if(!formula&&!title)return;
-state.ideas.unshift({id:state.nextIdeaId++,formula,score,status:'draft',created:new Date().toISOString().slice(0,10).replace(/-/g,'/')});
+state.ideas.unshift({id:state.nextIdeaId++,formula:formula,score:score,status:'draft',created:new Date().toISOString().slice(0,10).replace(/-/g,'/')});
 if(note)state.notes.push('[灵感] '+note);saveState();closeQuickNote();
 if(currentPage==='ideas')renderIdeas();document.getElementById('ideaBadge').textContent=state.ideas.length
 }
-// ===== Init =====
-document.addEventListener('DOMContentLoaded',function(){
-if(typeof lucide!=='undefined')lucide.createIcons();renderDashboard();
-document.querySelectorAll('.filter-bar').forEach(bar=>{bar.addEventListener('click',function(e){const btn=e.target.closest('.filter-btn');if(!btn)return;const t=btn.dataset.filter;const grp=['day','week','month'].includes(t)?['day','week','month']:['douyin','kuaishou','hongguo'];bar.querySelectorAll('.filter-btn').forEach(b=>{if(grp.includes(b.dataset.filter))b.classList.remove('active')});btn.classList.add('active')})});
-document.getElementById('quickNoteModal').addEventListener('click',function(e){if(e.target===this)closeQuickNote()});
-document.addEventListener('keydown',function(e){if(e.key==='Escape')closeQuickNote();if((e.key==='n')&&(e.ctrlKey||e.metaKey)){e.preventDefault();openQuickNote()}});
-let rt;window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(()=>{if(currentPage)renderPage(currentPage)},300)})
-});
 </script>
 </body>
 </html>
